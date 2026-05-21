@@ -3,18 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zamelki</title>
-    <!-- Подключаем внешний файл стилей -->
+    <title>Zametki</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <h1> Zametki </h1>
+        <h1>Zametki</h1>
         <button class="btn-primary" onclick="openModal()">+ Новая заметка</button>
+        
+        <!-- Панель фильтров и сортировки -->
+        <div class="filter-panel">
+            <div class="filter-group">
+                <label class="filter-label">️ Тег:</label>
+                <select id="tagFilter" class="filter-select" onchange="applyFilters()">
+                    <option value="">Все теги</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label class="filter-label"> Сортировка:</label>
+                <select id="sortOption" class="filter-select" onchange="applyFilters()">
+                    <option value="date-desc">📅 По дате (новые)</option>
+                    <option value="date-asc">📅 По дате (старые)</option>
+                    <option value="priority-desc">⭐ По приоритету (высокий)</option>
+                    <option value="priority-asc">⭐ По приоритету (низкий)</option>
+                </select>
+            </div>
+        </div>
+        
         <div class="notes-grid" id="notesGrid"></div>
     </div>
 
-    <!-- Модальное окно (HTML структура) -->
+    <!-- Modal -->
     <div class="modal-overlay" id="modalOverlay" onclick="closeModalOnOverlay(event)">
         <div class="modal" onclick="event.stopPropagation()">
             <div class="modal-header" id="modalHeader">Создание заметки</div>
@@ -27,6 +47,20 @@
                 <div class="form-group">
                     <label class="form-label">Название</label>
                     <input type="text" class="form-input" id="noteTitle" placeholder="Введите название заметки">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Приоритет</label>
+                    <select id="notePriority" class="form-select">
+                        <option value="low">🟢 Низкий</option>
+                        <option value="medium" selected>🟡 Средний</option>
+                        <option value="high">🔴 Высокий</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Теги (через запятую)</label>
+                    <input type="text" class="form-input" id="noteTags" placeholder="работа, срочно, идея">
                 </div>
                 
                 <div class="form-group">
@@ -57,7 +91,6 @@
         </div>
     </div>
 
-    <!-- Подключаем внешний файл скриптов -->
     <script src="script.js"></script>
 </body>
 </html>
