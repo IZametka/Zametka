@@ -1,26 +1,9 @@
 let notes = JSON.parse(localStorage.getItem('notes')) || [];
 let editingId = null;
 let currentMode = 'text';
-let searchQuery = '';
 
 function renderNotes() {
     const grid = document.getElementById('notesGrid');
-
-    let filteredNotes = [];
-    let query = searchQuery.toLowerCase().trim().replace('#', '');
-
-    for (let i = 0; i < notes.length; i++) {
-        let note = notes[i];
-        
-        let titleMatch = note.title.toLowerCase().includes(query);
-        let contentMatch = note.content.toLowerCase().includes(query);
-        
-        let tagsArray = (note.tags || '').toLowerCase().split(' ').map(t => t.replace('#', '').trim());
-        let tagsMatch = tagsArray.includes(query); 
-        if (titleMatch || contentMatch || tagsMatch) {
-            filteredNotes.push(note);
-        }
-    }
     
     if (notes.length === 0) {
         grid.innerHTML = `
@@ -32,19 +15,8 @@ function renderNotes() {
         `;
         return;
     }
-
-    if (filteredNotes.length === 0) {
-        grid.innerHTML = `
-            <div class="empty-state" style="grid-column: 1/-1;">
-                <div class="empty-state-icon">🔍</div>
-                <h3>Ничего не найдено</h3>
-                <p>Попробуйте изменить запрос.</p>
-            </div>
-        `;
-        return;
-    }
     
-    const sortedNotes = [...filteredNotes].sort((a, b) => {    
+    const sortedNotes = [...notes].sort((a, b) => {
         if (a.pinned && !b.pinned) return -1;
         if (!a.pinned && b.pinned) return 1;
         return new Date(b.date) - new Date(a.date);
@@ -54,20 +26,6 @@ function renderNotes() {
     let hasPinned = false;
     
     sortedNotes.forEach(note => {
-                let tagsHtml = '';
-        if (note.tags && note.tags.trim() !== '') {
-            let words = note.tags.split(' ');
-            tagsHtml = '<div style="margin-top: auto; padding-top: 10px; display: flex; flex-wrap: wrap; gap: 6px;">';
-            for (let j = 0; j < words.length; j++) {
-                let word = words[j].trim();
-                if (word !== '') {
-                    if (!word.startsWith('#')) { word = '#' + word; }
-                    tagsHtml += `<span style="background: rgba(0,0,0,0.06); padding: 2px 8px; border-radius: 12px; font-size: 13px; font-weight: bold; color: inherit;">${escapeHtml(word)}</span>`;
-                }
-            }
-            tagsHtml += '</div>';
-        }
-
         if (note.pinned && !hasPinned) {
             html += '<div class="section-title">📌 Закрепленные</div>';
             hasPinned = true;
@@ -94,7 +52,6 @@ function renderNotes() {
                 </div>
                 <div class="note-title">${escapeHtml(note.title)}</div>
                 <div class="note-content">${formatContent(note.content, note.mode)}</div>
-                ${tagsHtml}
                 <div class="note-date">${formatDate(note.date)}</div>
             </div>
         `;
@@ -167,7 +124,6 @@ function setMode(mode) {
 function saveNote() {
     const title = document.getElementById('noteTitle').value.trim();
     const content = document.getElementById('noteContent').value.trim();
-    const tags = document.getElementById('noteTags').value.trim();
     const color = document.getElementById('noteColor').value;
     const pinColor = document.getElementById('pinColor').value;
     const textColor = document.getElementById('textColor').value;
@@ -191,7 +147,6 @@ function saveNote() {
                 ...notes[index],
                 title,
                 content,
-                tags
                 mode: currentMode,
                 color: color,
                 pinColor: pinColor,
@@ -204,7 +159,6 @@ function saveNote() {
             id: Date.now(),
             title,
             content,
-            tags: tags,
             mode: currentMode,
             color: color,
             pinColor: pinColor,
@@ -228,7 +182,6 @@ function editNote(id) {
     document.getElementById('modalHeader').textContent = 'Редактирование заметки';
     document.getElementById('noteTitle').value = note.title;
     document.getElementById('noteContent').value = note.content;
-    document.getElementById('noteTags').value = note.tags || '';
     document.querySelector('.btn-save').textContent = 'Сохранить';
     
     document.getElementById('noteColor').value = note.color || '#ffffff';
@@ -263,7 +216,3 @@ document.addEventListener('keydown', (e) => {
 });
 
 renderNotes();
-function handleSearch(event) {
-    searchQuery = event.target.value;
-    renderNotes(); 
-}
