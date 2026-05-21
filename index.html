@@ -12,8 +12,13 @@
      <div class="container">
      <h1> Zametki </h1>
      <button class="btn-primary" onclick="openModal()">+ Новая заметка</button>
+     <div class="search-wrapper">
+        <input type="text" id="searchInput" placeholder="Поиск по названию, тексту или тегам..." oninput="handleSearch(event)">
+        <span class="search-icon">🔍</span>
+    </div>
      <div class="notes-grid" id="notesGrid"></div>
     </div>
+    
 
     <div class="modal-overlay" id="modalOverlay" onclick="closeModalOnOverlay(event)">
         <div class="modal" onclick="event.stopPropagation()">
@@ -28,7 +33,12 @@
                     <label class="form-label">Название</label>
                     <input type="text" class="form-input" id="noteTitle" placeholder="Введите название заметки">
                 </div>
-                
+               
+                <div class="form-group" style="margin-top: 15px;">
+                    <label class="form-label">Теги</label>
+                    <input type="text" class="form-input" id="noteTags">
+                </div>
+                 
                 <div class="form-group">
                     <label class="form-label" id="contentLabel">Содержание</label>
                     <textarea class="form-textarea" id="noteContent" placeholder="Введите текст заметки..."></textarea>
