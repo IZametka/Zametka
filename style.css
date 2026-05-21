@@ -401,3 +401,26 @@ input[type="color"]::-moz-color-swatch {
         flex-direction: column;
     }
 }
+.search-wrapper {
+    position: relative;
+    width: 100%;
+    margin: 20px 0;
+}
+
+#searchInput {
+    width: 100%;
+    padding: 10px 40px 10px 15px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+
+.search-icon {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: #888;
+}
