@@ -1,32 +1,42 @@
+
 let notes = JSON.parse(localStorage.getItem('notes')) || [];
 let editingId = null;
 let currentMode = 'text';
+let searchDebounceTimer = null;
 
 
 function renderNotes() {
-
     updateTagFilter();
-    
 
     const tagFilter = document.getElementById('tagFilter').value;
     const sortOption = document.getElementById('sortOption').value;
-    
-
+    const textSearch = document.getElementById('textSearch').value.trim().toLowerCase();
     const grid = document.getElementById('notesGrid');
-    
-    // фильтруем заметки
-    let filteredNotes = notes.filter(note => {
-        // Если тег не выбран, показываем все
-        if (!tagFilter) return true;
-        // Иначе проверяем, есть ли у заметки этот тег
-        return note.tags && note.tags.includes(tagFilter);
-    });
-    
-    // сортируем заметки
-    filteredNotes = sortNotes(filteredNotes, sortOption);
-    
 
-    if (filteredNotes.length === 0) {
+    //  Фильтры
+    let filteredNotes = notes.filter(note => {
+        if (tagFilter && (!note.tags || !note.tags.includes(tagFilter))) return false;
+        if (textSearch) {
+            const title = (note.title || '').toLowerCase();
+            const content = (note.content || '').toLowerCase();
+            const tags = (note.tags || []).join(' ').toLowerCase();
+            if (!title.includes(textSearch) && 
+                !content.includes(textSearch) && 
+                !tags.includes(textSearch)) return false;
+        }
+        return true;
+    });
+
+    // Разделение на закреплённые и обычные 
+    const pinned = filteredNotes.filter(n => n.pinned);
+    const unpinned = filteredNotes.filter(n => !n.pinned);
+
+    // Сортировка каждой группы отдельно
+    const sortedPinned = sortNotes(pinned, sortOption);
+    const sortedUnpinned = sortNotes(unpinned, sortOption);
+
+
+    if (sortedPinned.length === 0 && sortedUnpinned.length === 0) {
         grid.innerHTML = `
             <div class="empty-state" style="grid-column: 1/-1;">
                 <div class="empty-state-icon">📭</div>
@@ -36,99 +46,174 @@ function renderNotes() {
         `;
         return;
     }
-    
+
     let html = '';
-    let hasPinned = false;
-    
 
-    filteredNotes.forEach(note => {
-      
-        if (note.pinned && !hasPinned) {
-            html += '<div class="section-title">📌 Закрепленные</div>';
-            hasPinned = true;
-        } else if (!note.pinned && hasPinned) {
-            html += '<div class="section-title">📋 Остальные заметки</div>';
-            hasPinned = 2;
-        }
-        
+    if (sortedPinned.length > 0) {
+        html += '<div class="section-title">📌 Закрепленные</div>';
+        sortedPinned.forEach(note => {
+            html += renderNoteCard(note, textSearch);
+        });
+    }
 
-        const tagsHtml = note.tags && note.tags.length > 0 
-            ? `<div class="note-tags">${note.tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}</div>`
-            : '';
-        
-        // класс приоритета
-        const priorityClass = `priority-${note.priority || 'medium'}`;
-        const priorityText = {
-            'high': '🔴 Высокий',
-            'medium': '🟡 Средний',
-            'low': '🟢 Низкий'
-        }[note.priority || 'medium'];
-        
-      
-        html += `
-            <div class="note-card ${note.pinned ? 'pinned' : ''}" 
-                 style="--note-bg: ${note.color || '#ffffff'}; 
-                        --pin-bg: ${note.pinColor || '#e1f5fe'}; 
-                        --pin-border: ${note.pinColor || '#81d4fa'};
-                        --text-color: ${note.textColor || '#5a6c7d'};">
-                <div class="priority-indicator ${priorityClass}">${priorityText}</div>
-                ${note.pinned ? '<div class="pin-indicator">📌</div>' : ''}
-                <div class="note-actions">
-                    <button class="btn-icon ${note.pinned ? 'btn-pin active' : 'btn-pin'}" 
-                            onclick="togglePin(${note.id})" 
-                            title="${note.pinned ? 'Открепить' : 'Закрепить'}">
-                        ${note.pinned ? '📌' : '📍'}
-                    </button>
-                    <button class="btn-icon" onclick="editNote(${note.id})" title="Редактировать">✏️</button>
-                    <button class="btn-icon btn-delete" onclick="deleteNote(${note.id})" title="Удалить">🗑️</button>
-                </div>
-                <div class="note-title">${escapeHtml(note.title)}</div>
-                <div class="note-content">${formatContent(note.content, note.mode)}</div>
-                ${tagsHtml}
-                <div class="note-date">${formatDate(note.date)}</div>
-            </div>
-        `;
-    });
-    
+    if (sortedUnpinned.length > 0) {
+        html += '<div class="section-title">📋 Остальные заметки</div>';
+        sortedUnpinned.forEach(note => {
+            html += renderNoteCard(note, textSearch);
+        });
+    }
+
     grid.innerHTML = html;
 }
 
-// Обновление тегов
+
+function renderNoteCard(note, searchQuery = '') {
+    const tagsHtml = note.tags && note.tags.length > 0 
+        ? `<div class="note-tags">${note.tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}</div>`
+        : '';
+    
+    const priorityClass = `priority-${note.priority || 'medium'}`;
+    const priorityText = {
+        'high': '🔴 Высокий',
+        'medium': '🟡 Средний',
+        'low': '🟢 Низкий'
+    }[note.priority || 'medium'];
+
+    const titleHtml = searchQuery 
+        ? highlightText(escapeHtml(note.title), searchQuery)
+        : escapeHtml(note.title);
+    
+    const contentHtml = searchQuery
+        ? highlightText(formatContent(note.content, note.mode), searchQuery)
+        : formatContent(note.content, note.mode);
+
+    return `
+        <div class="note-card ${note.pinned ? 'pinned' : ''}" 
+             style="--note-bg: ${note.color || '#ffffff'}; 
+                    --pin-bg: ${note.pinColor || '#e1f5fe'}; 
+                    --pin-border: ${note.pinColor || '#81d4fa'};
+                    --text-color: ${note.textColor || '#5a6c7d'};">
+            <div class="priority-indicator ${priorityClass}">${priorityText}</div>
+            ${note.pinned ? '<div class="pin-indicator">📌</div>' : ''}
+            <div class="note-actions">
+                <button class="btn-icon ${note.pinned ? 'btn-pin active' : 'btn-pin'}" 
+                        onclick="togglePin(${note.id})" 
+                        title="${note.pinned ? 'Открепить' : 'Закрепить'}">
+                    ${note.pinned ? '📌' : '📍'}
+                </button>
+                <button class="btn-icon" onclick="editNote(${note.id})" title="Редактировать">✏️</button>
+                <button class="btn-icon btn-delete" onclick="deleteNote(${note.id})" title="Удалить">🗑️</button>
+            </div>
+            <div class="note-title">${titleHtml}</div>
+            <div class="note-content">${contentHtml}</div>
+            ${tagsHtml}
+            <div class="note-date">${formatDate(note.date)}</div>
+        </div>
+    `;
+}
+
+
+function highlightText(html, query) {
+    if (!query) return html;
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${escapedQuery})`, 'gi');
+    return html.replace(regex, '<mark>$1</mark>');
+}
+
+
+function getAllTags() {
+    const tags = new Set();
+    notes.forEach(note => {
+        if (note.tags) {
+            note.tags.forEach(tag => tags.add(tag));
+        }
+    });
+    return Array.from(tags).sort();
+}
+
+function onTagsInput() {
+    showTagSuggestions();
+}
+
+function showTagSuggestions() {
+    const input = document.getElementById('noteTags');
+    const suggestionsBox = document.getElementById('tagSuggestions');
+    const value = input.value;
+
+    const parts = value.split(',');
+    const currentTag = parts[parts.length - 1].trim().toLowerCase();
+
+    const allTags = getAllTags();
+    const alreadyAdded = parts.slice(0, -1).map(p => p.trim().toLowerCase()).filter(Boolean);
+    
+    const suggestions = allTags.filter(tag => 
+        tag.toLowerCase().includes(currentTag) && 
+        !alreadyAdded.includes(tag.toLowerCase())
+    );
+
+    if (currentTag === '' && suggestions.length === 0) {
+        hideTagSuggestions();
+        return;
+    }
+
+    const items = suggestions.length > 0 
+        ? suggestions.map(tag => {
+            const highlighted = highlightTag(tag, currentTag);
+            return `<div class="tag-suggestion-item" onclick="addTagSuggestion('${escapeAttr(tag)}')">${highlighted}</div>`;
+          }).join('')
+        : '<div class="no-suggestions">Нет подходящих тегов</div>';
+
+    suggestionsBox.innerHTML = items;
+    suggestionsBox.classList.add('visible');
+}
+
+function highlightTag(tag, query) {
+    if (!query) return escapeHtml(tag);
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${escapedQuery})`, 'gi');
+    return escapeHtml(tag).replace(regex, '<mark>$1</mark>');
+}
+
+function escapeAttr(str) {
+    return str.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+
+function addTagSuggestion(tag) {
+    const input = document.getElementById('noteTags');
+    const parts = input.value.split(',');
+    parts[parts.length - 1] = tag;
+    input.value = parts.join(', ').replace(/\s*,\s*/g, ', ') + ', ';
+    hideTagSuggestions();
+    input.focus();
+    // Обновляем счётчик после добавления тега
+    updateCharCounter('noteTags', 'tagsCounter', 150);
+}
+
+function hideTagSuggestions() {
+    document.getElementById('tagSuggestions').classList.remove('visible');
+}
+
+
 function updateTagFilter() {
     const tagFilter = document.getElementById('tagFilter');
     const currentValue = tagFilter.value;
-    
-    // Уникальные теги
-    const allTags = new Set();
-    notes.forEach(note => {
-        if (note.tags) {
-            note.tags.forEach(tag => allTags.add(tag));
-        }
-    });
-    
-    // Сортировка тегов
-    const sortedTags = Array.from(allTags).sort();
-    
+    const allTags = getAllTags();
+
     tagFilter.innerHTML = '<option value="">Все теги</option>';
-    sortedTags.forEach(tag => {
+    allTags.forEach(tag => {
         const option = document.createElement('option');
         option.value = tag;
         option.textContent = tag;
         tagFilter.appendChild(option);
     });
-    
     tagFilter.value = currentValue;
 }
 
 // Сортировка
 function sortNotes(notesArray, sortOption) {
     return [...notesArray].sort((a, b) => {
-        // Сортировка по приоритету (закреплённые всегда сверху)
-        if (a.pinned && !b.pinned) return -1;
-        if (!a.pinned && b.pinned) return 1;
-        
         const priorityOrder = { 'high': 3, 'medium': 2, 'low': 1 };
-        
+
         switch(sortOption) {
             case 'date-desc':
                 return new Date(b.date) - new Date(a.date);
@@ -150,12 +235,47 @@ function sortNotes(notesArray, sortOption) {
     });
 }
 
-// фильтры
+// Счётчик
+function updateCharCounter(inputId, counterId, max) {
+    const input = document.getElementById(inputId);
+    const counter = document.getElementById(counterId);
+    if (!input || !counter) return;
+    
+    const currentLength = input.value.length;
+    counter.textContent = `${currentLength}/${max}`;
+    
+    counter.classList.remove('warning', 'danger');
+    
+    const percent = currentLength / max;
+    if (percent >= 0.95) {
+        counter.classList.add('danger');
+    } else if (percent >= 0.8) {
+        counter.classList.add('warning');
+    }
+}
+
 function applyFilters() {
     renderNotes();
 }
 
-// форматирование содержимого 
+function applyFiltersDebounced() {
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(() => {
+        renderNotes();
+    }, 250);
+}
+
+document.addEventListener('click', (e) => {
+    const tagsInput = document.getElementById('noteTags');
+    const suggestionsBox = document.getElementById('tagSuggestions');
+    if (tagsInput && suggestionsBox && 
+        !tagsInput.contains(e.target) && 
+        !suggestionsBox.contains(e.target)) {
+        hideTagSuggestions();
+    }
+});
+
+
 function formatContent(content, mode) {
     if (mode === 'list') {
         const items = content.split('\n').filter(item => item.trim());
@@ -171,7 +291,6 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// Функция форматирования даты
 function formatDate(dateString) {
     const date = new Date(dateString);
     return date.toLocaleDateString('ru-RU', { 
@@ -180,7 +299,7 @@ function formatDate(dateString) {
     });
 }
 
-// Функции модального окна
+// Модальное окно
 function openModal() {
     editingId = null;
     document.getElementById('modalHeader').textContent = 'Создание заметки';
@@ -195,23 +314,27 @@ function openModal() {
     document.getElementById('pinColor').value = '#e1f5fe';
     document.getElementById('textColor').value = '#5a6c7d';
     
+    // Сброс счётчиков
+    updateCharCounter('noteTitle', 'titleCounter', 100);
+    updateCharCounter('noteContent', 'contentCounter', 2000);
+    updateCharCounter('noteTags', 'tagsCounter', 150);
+    
     document.getElementById('modalOverlay').classList.add('active');
     document.getElementById('noteTitle').focus();
 }
 
 function closeModal() {
     document.getElementById('modalOverlay').classList.remove('active');
+    hideTagSuggestions();
     editingId = null;
 }
 
-// Закрытие окна при клике на фон
 function closeModalOnOverlay(event) {
     if (event.target === event.currentTarget) {
         closeModal();
     }
 }
 
-// режим Текст/Список
 function setMode(mode) {
     currentMode = mode;
     document.getElementById('textMode').classList.toggle('active', mode === 'text');
@@ -220,7 +343,7 @@ function setMode(mode) {
     document.getElementById('noteContent').placeholder = mode === 'list' ? 'Введите элементы списка...\nКаждый элемент с новой строки' : 'Введите текст заметки...';
 }
 
-// Сохрание заметки
+
 function saveNote() {
     const title = document.getElementById('noteTitle').value.trim();
     const content = document.getElementById('noteContent').value.trim();
@@ -229,16 +352,40 @@ function saveNote() {
     const textColor = document.getElementById('textColor').value;
     const priority = document.getElementById('notePriority').value;
     
-    // Парсим теги: разбиваем по запятой, убираем пробелы и пустые значения
     const tagsInput = document.getElementById('noteTags').value.trim();
-    const tags = tagsInput ? tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
+    
+    // Парсинг и проверка тегов
+    let tags = [];
+    if (tagsInput) {
+        const rawTags = tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag);
+        for (const tag of rawTags) {
+            if (tag.length > 15) {
+                alert(`Тег "${tag}" слишком длинный (максимум 15 символов).`);
+                return;
+            }
+            tags.push(tag);
+        }
+        if (tags.length > 10) {
+            alert('Можно добавить максимум 10 тегов.');
+            return;
+        }
+    }
+
+    // Ограничение символов
+    if (title.length > 100) {
+        alert('Название не может быть длиннее 100 символов.');
+        return;
+    }
+    if (content.length > 2000) {
+        alert('Содержание не может быть длиннее 2000 символов.');
+        return;
+    }
 
     if (!title) {
         alert('Введите название заметки');
         document.getElementById('noteTitle').focus();
         return;
     }
-
     if (!content) {
         alert('Введите содержание заметки');
         document.getElementById('noteContent').focus();
@@ -250,28 +397,18 @@ function saveNote() {
         if (index !== -1) {
             notes[index] = {
                 ...notes[index],
-                title,
-                content,
-                mode: currentMode,
-                color,
-                pinColor,
-                textColor,
-                priority,
-                tags,
+                title, content, mode: currentMode,
+                color, pinColor, textColor,
+                priority, tags,
                 date: new Date().toISOString()
             };
         }
     } else {
         const newNote = {
             id: Date.now(),
-            title,
-            content,
-            mode: currentMode,
-            color,
-            pinColor,
-            textColor,
-            priority,
-            tags,
+            title, content, mode: currentMode,
+            color, pinColor, textColor,
+            priority, tags,
             pinned: false,
             date: new Date().toISOString()
         };
@@ -283,7 +420,6 @@ function saveNote() {
     closeModal();
 }
 
-// Функция редактирования заметки
 function editNote(id) {
     const note = notes.find(n => n.id === id);
     if (!note) return;
@@ -300,11 +436,15 @@ function editNote(id) {
     document.getElementById('pinColor').value = note.pinColor || '#e1f5fe';
     document.getElementById('textColor').value = note.textColor || '#5a6c7d';
     
+    // Обновление счётчиков при открытии редактирования
+    updateCharCounter('noteTitle', 'titleCounter', 100);
+    updateCharCounter('noteContent', 'contentCounter', 2000);
+    updateCharCounter('noteTags', 'tagsCounter', 150);
+    
     setMode(note.mode || 'text');
     document.getElementById('modalOverlay').classList.add('active');
 }
 
-// Функция переключения статуса закрепления
 function togglePin(id) {
     const note = notes.find(n => n.id === id);
     if (note) {
@@ -314,7 +454,6 @@ function togglePin(id) {
     }
 }
 
-// Функция удаления заметки
 function deleteNote(id) {
     if (confirm('Удалить эту заметку?')) {
         notes = notes.filter(n => n.id !== id);
