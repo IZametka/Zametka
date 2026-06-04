@@ -1,9 +1,7 @@
-
 let notes = JSON.parse(localStorage.getItem('notes')) || [];
 let editingId = null;
 let currentMode = 'text';
 let searchDebounceTimer = null;
-
 
 function renderNotes() {
     updateTagFilter();
@@ -13,7 +11,6 @@ function renderNotes() {
     const textSearch = document.getElementById('textSearch').value.trim().toLowerCase();
     const grid = document.getElementById('notesGrid');
 
-    //  Фильтры
     let filteredNotes = notes.filter(note => {
         if (tagFilter && (!note.tags || !note.tags.includes(tagFilter))) return false;
         if (textSearch) {
@@ -27,14 +24,11 @@ function renderNotes() {
         return true;
     });
 
-    // Разделение на закреплённые и обычные 
     const pinned = filteredNotes.filter(n => n.pinned);
     const unpinned = filteredNotes.filter(n => !n.pinned);
 
-    // Сортировка каждой группы отдельно
     const sortedPinned = sortNotes(pinned, sortOption);
     const sortedUnpinned = sortNotes(unpinned, sortOption);
-
 
     if (sortedPinned.length === 0 && sortedUnpinned.length === 0) {
         grid.innerHTML = `
@@ -65,7 +59,6 @@ function renderNotes() {
 
     grid.innerHTML = html;
 }
-
 
 function renderNoteCard(note, searchQuery = '') {
     const tagsHtml = note.tags && note.tags.length > 0 
@@ -112,14 +105,12 @@ function renderNoteCard(note, searchQuery = '') {
     `;
 }
 
-
 function highlightText(html, query) {
     if (!query) return html;
     const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const regex = new RegExp(`(${escapedQuery})`, 'gi');
     return html.replace(regex, '<mark>$1</mark>');
 }
-
 
 function getAllTags() {
     const tags = new Set();
@@ -185,14 +176,12 @@ function addTagSuggestion(tag) {
     input.value = parts.join(', ').replace(/\s*,\s*/g, ', ') + ', ';
     hideTagSuggestions();
     input.focus();
-    // Обновляем счётчик после добавления тега
     updateCharCounter('noteTags', 'tagsCounter', 150);
 }
 
 function hideTagSuggestions() {
     document.getElementById('tagSuggestions').classList.remove('visible');
 }
-
 
 function updateTagFilter() {
     const tagFilter = document.getElementById('tagFilter');
@@ -209,7 +198,6 @@ function updateTagFilter() {
     tagFilter.value = currentValue;
 }
 
-// Сортировка
 function sortNotes(notesArray, sortOption) {
     return [...notesArray].sort((a, b) => {
         const priorityOrder = { 'high': 3, 'medium': 2, 'low': 1 };
@@ -235,7 +223,6 @@ function sortNotes(notesArray, sortOption) {
     });
 }
 
-// Счётчик
 function updateCharCounter(inputId, counterId, max) {
     const input = document.getElementById(inputId);
     const counter = document.getElementById(counterId);
@@ -275,7 +262,6 @@ document.addEventListener('click', (e) => {
     }
 });
 
-
 function formatContent(content, mode) {
     if (mode === 'list') {
         const items = content.split('\n').filter(item => item.trim());
@@ -299,7 +285,6 @@ function formatDate(dateString) {
     });
 }
 
-// Модальное окно
 function openModal() {
     editingId = null;
     document.getElementById('modalHeader').textContent = 'Создание заметки';
@@ -313,8 +298,7 @@ function openModal() {
     document.getElementById('noteColor').value = '#ffffff';
     document.getElementById('pinColor').value = '#e1f5fe';
     document.getElementById('textColor').value = '#5a6c7d';
-    
-    // Сброс счётчиков
+
     updateCharCounter('noteTitle', 'titleCounter', 100);
     updateCharCounter('noteContent', 'contentCounter', 2000);
     updateCharCounter('noteTags', 'tagsCounter', 150);
@@ -343,7 +327,6 @@ function setMode(mode) {
     document.getElementById('noteContent').placeholder = mode === 'list' ? 'Введите элементы списка...\nКаждый элемент с новой строки' : 'Введите текст заметки...';
 }
 
-
 function saveNote() {
     const title = document.getElementById('noteTitle').value.trim();
     const content = document.getElementById('noteContent').value.trim();
@@ -351,10 +334,8 @@ function saveNote() {
     const pinColor = document.getElementById('pinColor').value;
     const textColor = document.getElementById('textColor').value;
     const priority = document.getElementById('notePriority').value;
-    
     const tagsInput = document.getElementById('noteTags').value.trim();
-    
-    // Парсинг и проверка тегов
+
     let tags = [];
     if (tagsInput) {
         const rawTags = tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag);
@@ -371,7 +352,6 @@ function saveNote() {
         }
     }
 
-    // Ограничение символов
     if (title.length > 100) {
         alert('Название не может быть длиннее 100 символов.');
         return;
@@ -435,8 +415,7 @@ function editNote(id) {
     document.getElementById('noteColor').value = note.color || '#ffffff';
     document.getElementById('pinColor').value = note.pinColor || '#e1f5fe';
     document.getElementById('textColor').value = note.textColor || '#5a6c7d';
-    
-    // Обновление счётчиков при открытии редактирования
+
     updateCharCounter('noteTitle', 'titleCounter', 100);
     updateCharCounter('noteContent', 'contentCounter', 2000);
     updateCharCounter('noteTags', 'tagsCounter', 150);
@@ -465,6 +444,29 @@ function deleteNote(id) {
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         closeModal();
+    }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    const popaZ = document.getElementById('popa-Z');
+    const popaAudio = document.getElementById('popa-Audio');
+
+
+    if (popaZ && popaAudio) {
+        popaZ.addEventListener('click', () => {
+          
+            if (popaAudio.paused) {
+                popaAudio.play().catch(error => {
+                    console.log('Ошибка воспроизведения (проверь файл anthem.mp3):', error);
+                });
+            } else {
+               
+                popaAudio.pause();
+                popaAudio.currentTime = 0;
+            }
+        });
+    } else {
+        console.error('Ошибка: Не найден элемент с id="popa-Z" или id="popa-Audio" в HTML');
     }
 });
 

@@ -8,10 +8,10 @@
 </head>
 <body>
     <div class="container">
-        <h1> Zametki </h1>
+        <h1><span id="popa-Z">Z</span>ametki</h1>
+<audio id="popa-Audio" preload="auto"><source src="anthem.mp3" type="audio/mpeg"></audio>
         <button class="btn-primary" onclick="openModal()">+ Новая заметка</button>
         
-        <!-- Панель фильтров, сортировки и поиска -->
         <div class="filter-panel">
             <div class="filter-group filter-group-grow">
                 <label class="filter-label">🔍 Поиск:</label>
@@ -45,7 +45,6 @@
         <div class="notes-grid" id="notesGrid"></div>
     </div>
 
-    <!-- Модальное окно -->
     <div class="modal-overlay" id="modalOverlay" onclick="closeModalOnOverlay(event)">
         <div class="modal" onclick="event.stopPropagation()">
             <div class="modal-header" id="modalHeader">Создание заметки</div>
@@ -55,7 +54,6 @@
                     <button class="mode-btn" onclick="setMode('list')" id="listMode">Список</button>
                 </div>
                 
-                <!-- Название и счетчик -->
                 <div class="form-group">
                     <div class="label-with-counter">
                         <label class="form-label">Название</label>
@@ -66,8 +64,7 @@
                            maxlength="100" 
                            oninput="updateCharCounter('noteTitle', 'titleCounter', 100)">
                 </div>
-                
-                <!-- Приоритет -->
+
                 <div class="form-group">
                     <label class="form-label">Приоритет</label>
                     <select id="notePriority" class="form-select">
@@ -76,8 +73,7 @@
                         <option value="high">🔴 Высокий</option>
                     </select>
                 </div>
-                
-                <!-- Теги -->
+
                 <div class="form-group form-group-relative">
                     <div class="label-with-counter">
                         <label class="form-label">Теги (через запятую)</label>
@@ -94,8 +90,7 @@
                     >
                     <div class="tag-suggestions" id="tagSuggestions"></div>
                 </div>
-                
-                <!-- Содержание и счётчик -->
+
                 <div class="form-group">
                     <div class="label-with-counter">
                         <label class="form-label" id="contentLabel">Содержание</label>
@@ -107,7 +102,6 @@
                               oninput="updateCharCounter('noteContent', 'contentCounter', 2000)"></textarea>
                 </div>
 
-                <!-- Палитра цветов -->
                 <div class="color-pickers">
                     <div class="color-group">
                         <label class="color-label">Фон</label>
