@@ -1,4 +1,5 @@
-let notes = JSON.parse(localStorage.getItem('notes')) || [];
+const storedNotes = localStorage.getItem('notes');
+let notes = storedNotes ? JSON.parse(storedNotes) : [];
 let editingId = null;
 let currentMode = 'text';
 let searchDebounceTimer = null;
@@ -637,14 +638,14 @@ function renderSecretNotes() {
         <div style="background:#fff; padding:15px; margin-bottom:10px; border-radius:8px; border-left: 4px solid #d32f2f; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative;">
             <!-- Кнопка удаления -->
             <button onclick="deleteSecretNote(${note.id})" 
-                style="position:absolute; top: 10px; right: 10px; 
-                background: #ffebee; border: none; 
-                border-radius: 6px; padding: 6px 10px; 
-                cursor: pointer; color: #d32f2f;
-                font-size: 18px; line-height: 1;
-                transition: all 0.2s;
-                z-index: 10;">
-                🗑️
+                    style="position:absolute; top: 10px; right: 10px; 
+                    background: #ffebee; border: none; 
+                    border-radius: 6px; padding: 6px 10px; 
+                    cursor: pointer; color: #d32f2f;
+                    font-size: 18px; line-height: 1;
+                    transition: all 0.2s;
+                    z-index: 10;">
+                    🗑️
             </button>
             
             <div style="font-weight:bold; margin-bottom:8px; padding-right: 40px;">
@@ -662,7 +663,6 @@ function renderSecretNotes() {
     list.innerHTML = html;
 }
 
-
     let html = '';
     secretNotes.forEach(note => {
         html += `
@@ -673,7 +673,7 @@ function renderSecretNotes() {
         </div>
         `;
     });
-    list.innerHTML = html;
+
 
 
 // Обработка Enter
