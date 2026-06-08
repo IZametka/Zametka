@@ -8,7 +8,7 @@
 </head>
 <body>
     <div class="container">
-        <h1><span id="popa-Z">Z</span>ametki</h1>
+        <h1><span id="popa-Z">Z</span>ame<span id="secret-trigger">t</span>ki</h1>
 <audio id="popa-Audio" preload="auto"><source src="anthem.mp3" type="audio/mpeg"></audio>
         <button class="btn-primary" onclick="openModal()">+ Новая заметка</button>
         
@@ -123,6 +123,56 @@
             </div>
         </div>
     </div>
+
+<!-- СЕКРЕТНАЯ МОДАЛКА -->
+<div id="secretModal" class="modal-overlay">
+    <div class="modal secret-modal">
+        <div class="modal-header" style="background: #2c3e50;">🔐 Секретный архив</div>
+        <div class="modal-body">
+            
+            <!-- Экран 1: Ввод пароля -->
+            <div id="secret-login-screen">
+                <p style="text-align: center; margin-bottom: 15px; color: #666;">Введите секретный код доступа:</p>
+                <input type="password" id="secret-password-input" class="form-input" placeholder="Пароль" style="margin-bottom: 10px;">
+                <p id="secret-error" style="color: #d32f2f; display: none; font-size: 13px; text-align: center; font-weight: bold;"></p>
+                <button class="btn btn-save" style="width: 100%;" onclick="checkSecretPassword()">Войти</button>
+                <button class="btn btn-cancel" style="width: 100%; margin-top: 10px;" onclick="closeSecretModal()">Отмена</button>
+            </div>
+
+            <!-- Экран 2: Создание пароля (первый вход) -->
+            <div id="secret-setup-screen" style="display: none;">
+                <p style="text-align: center; margin-bottom: 15px; color: #666;">Секретный архив пуст. Придумайте пароль:</p>
+                <input type="password" id="secret-new-password" class="form-input" placeholder="Новый пароль" style="margin-bottom: 10px;">
+                <button class="btn btn-save" style="width: 100%;" onclick="setSecretPassword()">Создать пароль</button>
+            </div>
+
+            <!-- Экран 3: Список секретных заметок -->
+            <div id="secret-content-screen" style="display: none;">
+                <div style="text-align: center; color: #666; margin-bottom: 20px;">🔒 Секретный архив защищён паролем</div>
+                
+                <!-- КНОПКА СОЗДАНИЯ  -->
+                <button class="btn btn-save" style="width: 100%; margin-bottom: 15px;" onclick="openSecretNoteForm()">
+                    + Добавить секретную заметку
+                </button>
+
+                <!-- Форма создания (скрыта по умолчанию) -->
+                <div id="secret-note-form" style="display: none; background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <input type="text" id="secret-note-title" class="form-input" placeholder="Название" style="margin-bottom: 10px;">
+                    <textarea id="secret-note-content" class="form-textarea" placeholder="Секретный текст..." style="margin-bottom: 10px; min-height: 80px;"></textarea>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-save" style="flex: 1;" onclick="saveSecretNote()">Сохранить</button>
+                        <button class="btn btn-cancel" style="flex: 1;" onclick="closeSecretNoteForm()">Отмена</button>
+                    </div>
+                </div>
+
+                <!-- Список заметок -->
+                <div id="secret-notes-list"></div> 
+                
+                <button class="btn btn-cancel" style="width: 100%; margin-top: 15px;" onclick="closeSecretModal()">Закрыть архив</button>
+            </div>
+        </div>
+    </div>
+</div>
 
     <script src="script.js"></script>
 </body>

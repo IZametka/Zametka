@@ -561,3 +561,18 @@ input[type="color"]::-moz-color-swatch { border: none; border-radius: 3px; }
 #popa-Z:active {
     transform: scale(0.95); /* Эффект нажатия */
 }
+
+/* Стили для секретной модалки */
+.secret-modal .modal-header {
+    background: #2c3e50 !important; /* Темный заголовок */
+}
+
+#secret-trigger {
+    cursor: pointer;
+    color: #5a6c7d;
+    transition: color 0.3s;
+}
+
+#secret-trigger:hover {
+    color: #000000;
+}

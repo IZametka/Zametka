@@ -470,4 +470,230 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+// --- ЛОГИКА СЕКРЕТНЫХ ЗАМЕТОК ---
+
+// Переменные
+let secretNotes = JSON.parse(localStorage.getItem('secret_notes')) || [];
+let failedAttempts = parseInt(localStorage.getItem('secret_failed_attempts')) || 0;
+
+// Элементы DOM
+const secretTrigger = document.getElementById('secret-trigger');
+const secretModal = document.getElementById('secretModal');
+const loginScreen = document.getElementById('secret-login-screen');
+const setupScreen = document.getElementById('secret-setup-screen');
+const contentScreen = document.getElementById('secret-content-screen');
+const errorText = document.getElementById('secret-error');
+
+// 1. Открытие модалки
+if (secretTrigger) {
+    secretTrigger.addEventListener('click', () => {
+        openSecretModal();
+    });
+}
+
+function openSecretModal() {
+    loginScreen.style.display = 'none';
+    setupScreen.style.display = 'none';
+    contentScreen.style.display = 'none';
+    if(errorText) errorText.style.display = 'none';
+
+    const savedPassword = localStorage.getItem('secret_archive_password');
+
+    if (savedPassword) {
+        loginScreen.style.display = 'block';
+        document.getElementById('secret-password-input').value = '';
+        document.getElementById('secret-password-input').focus();
+        updateAttemptsUI();
+    } else {
+        setupScreen.style.display = 'block';
+        document.getElementById('secret-new-password').value = '';
+        document.getElementById('secret-new-password').focus();
+    }
+    secretModal.classList.add('active');
+}
+
+function closeSecretModal() {
+    secretModal.classList.remove('active');
+    failedAttempts = 0;
+    localStorage.setItem('secret_failed_attempts', 0);
+}
+
+// 2. Создание пароля
+function setSecretPassword() {
+    const newPass = document.getElementById('secret-new-password').value;
+    if (newPass.length < 1) {
+        alert('Пароль не может быть пустым!');
+        return;
+    }
+    localStorage.setItem('secret_archive_password', newPass);
+    localStorage.setItem('secret_failed_attempts', 0);
+    alert('Пароль установлен!');
+    closeSecretModal();
+}
+
+// 3. Проверка пароля + Самоуничтожение
+function checkSecretPassword() {
+    const inputPass = document.getElementById('secret-password-input').value;
+    const savedPass = localStorage.getItem('secret_archive_password');
+
+    if (inputPass === savedPass) {
+        localStorage.setItem('secret_failed_attempts', 0);
+        loginScreen.style.display = 'none';
+        contentScreen.style.display = 'block';
+        renderSecretNotes();
+    } else {
+        failedAttempts++;
+        localStorage.setItem('secret_failed_attempts', failedAttempts);
+        updateAttemptsUI();
+        document.getElementById('secret-password-input').value = '';
+        document.getElementById('secret-password-input').focus();
+
+        if (failedAttempts >= 3) {
+            localStorage.removeItem('secret_notes');
+            localStorage.removeItem('secret_archive_password');
+            localStorage.setItem('secret_failed_attempts', 0);
+            alert(' ДОСТУП ЗАПРЕЩЕН: Архив уничтожен!');
+            closeSecretModal();
+            location.reload();
+        }
+    }
+}
+
+function updateAttemptsUI() {
+    if (errorText) {
+        errorText.style.display = 'block';
+        errorText.textContent = `Неверный пароль! Осталось попыток: ${3 - failedAttempts}`;
+    }
+}
+
+// Открыть форму
+function openSecretNoteForm() {
+    const form = document.getElementById('secret-note-form');
+    if (form) {
+        form.style.display = 'block';
+        document.getElementById('secret-note-title').focus();
+    }
+}
+
+// Закрыть форму и очистить
+function closeSecretNoteForm() {
+    const form = document.getElementById('secret-note-form');
+    if (form) {
+        form.style.display = 'none';
+        document.getElementById('secret-note-title').value = '';
+        document.getElementById('secret-note-content').value = '';
+    }
+}
+
+// Сохранить заметку
+function saveSecretNote() {
+    const title = document.getElementById('secret-note-title').value.trim();
+    const content = document.getElementById('secret-note-content').value.trim();
+
+    if (!title || !content) {
+        alert('Заполните название и текст!');
+        return;
+    }
+
+    const newNote = {
+        id: Date.now(),
+        title: title,
+        content: content,
+        date: new Date().toISOString()
+    };
+
+    secretNotes.unshift(newNote);
+    localStorage.setItem('secret_notes', JSON.stringify(secretNotes));
+    
+    renderSecretNotes();
+    closeSecretNoteForm();
+}
+
+// Удалить заметку
+function deleteSecretNote(id) {
+    if (confirm('Удалить эту секретную заметку?')) {
+        secretNotes = secretNotes.filter(n => n.id !== id);
+        localStorage.setItem('secret_notes', JSON.stringify(secretNotes));
+        renderSecretNotes();
+    }
+}
+
+// Отрисовка списка
+function renderSecretNotes() {
+    const list = document.getElementById('secret-notes-list');
+    if (!list) return;
+    
+    if (secretNotes.length === 0) {
+        list.innerHTML = '<p style="color:#888; text-align:center; padding: 20px;">Архив пуст.</p>';
+        return;
+    }
+
+function renderSecretNotes() {
+    const list = document.getElementById('secret-notes-list');
+    if (!list) return;
+    
+    if (secretNotes.length === 0) {
+        list.innerHTML = '<p style="color:#888; text-align:center; padding: 20px;">Архив пуст.</p>';
+        return;
+    }
+
+    let html = '';
+    secretNotes.forEach(note => {
+        html += `
+        <div style="background:#fff; padding:15px; margin-bottom:10px; border-radius:8px; border-left: 4px solid #d32f2f; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative;">
+            <!-- Кнопка удаления -->
+            <button onclick="deleteSecretNote(${note.id})" 
+                style="position:absolute; top: 10px; right: 10px; 
+                       background: #ffebee; border: none; 
+                       border-radius: 6px; padding: 6px 10px; 
+                       cursor: pointer; color: #d32f2f;
+                       font-size: 18px; line-height: 1;
+                       transition: all 0.2s;
+                       z-index: 10;">
+                🗑️
+            </button>
+            
+            <div style="font-weight:bold; margin-bottom:8px; padding-right: 40px;">
+                ${escapeHtml(note.title)}
+            </div>
+            <div style="color:#666; font-size:14px; white-space:pre-wrap; line-height:1.4;">
+                ${escapeHtml(note.content)}
+            </div>
+            <div style="font-size:11px; color:#999; margin-top:10px; text-align:right;">
+                ${formatDate(note.date)}
+            </div>
+        </div>
+        `;
+    });
+    list.innerHTML = html;
+}
+
+
+    let html = '';
+    secretNotes.forEach(note => {
+        html += `
+        <div style="background:#fff; padding:12px; margin-bottom:10px; border-radius:8px; border-left: 4px solid #d32f2f; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative;">
+            <div style="font-weight:bold; margin-bottom:5px;">${escapeHtml(note.title)}</div>
+            <div style="color:#666; font-size:14px; white-space:pre-wrap;">${escapeHtml(note.content)}</div>
+            <button onclick="deleteSecretNote(${note.id})" style="position:absolute; top: 5px; right: 5px; background: #ffebee; border: none; border-radius: 4px; padding: 2px 8px; cursor: pointer; color: #d32f2f;">️</button>
+        </div>
+        `;
+    });
+    list.innerHTML = html;
+}
+
+// Обработка Enter
+if (document.getElementById('secret-password-input')) {
+    document.getElementById('secret-password-input').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') checkSecretPassword();
+    });
+}
+if (document.getElementById('secret-new-password')) {
+    document.getElementById('secret-new-password').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') setSecretPassword();
+    });
+}
+
+
+
 renderNotes();
