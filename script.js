@@ -675,7 +675,7 @@ function renderSecretNotes() {
         <div style="background:#fff; padding:12px; margin-bottom:10px; border-radius:8px; border-left: 4px solid #d32f2f; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative;">
             <div style="font-weight:bold; margin-bottom:5px;">${escapeHtml(note.title)}</div>
             <div style="color:#666; font-size:14px; white-space:pre-wrap;">${escapeHtml(note.content)}</div>
-            <button onclick="deleteSecretNote(${note.id})" style="position:absolute; top: 5px; right: 5px; background: #ffebee; border: none; border-radius: 4px; padding: 2px 8px; cursor: pointer; color: #d32f2f;">️</button>
+            <button onclick="deleteSecretNote(${note.id})" style="position:absolute; top: 5px; right: 5px; background: #ffebee; border: none; border-radius: 4px; padding: 2px 8px; cursor: pointer; color: #d32f2f;">️🗑️</button>
         </div>
         `;
     });
