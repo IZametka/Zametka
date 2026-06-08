@@ -554,17 +554,17 @@ input[type="color"]::-moz-color-swatch { border: none; border-radius: 3px; }
 }
 
 #popa-Z:hover {
-    color: #d32f2f; /* Красный цвет при наведении */
-    transform: scale(1.1); /* Немного увеличивается */
+    color: #d32f2f;
+    transform: scale(1.1);
 }
 
 #popa-Z:active {
-    transform: scale(0.95); /* Эффект нажатия */
+    transform: scale(0.95);
 }
 
 /* Стили для секретной модалки */
 .secret-modal .modal-header {
-    background: #2c3e50 !important; /* Темный заголовок */
+    background: #2c3e50 !important;
 }
 
 #secret-trigger {

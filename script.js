@@ -82,7 +82,7 @@ function renderNoteCard(note, searchQuery = '') {
 
     return `
         <div class="note-card ${note.pinned ? 'pinned' : ''}" 
-             style="--note-bg: ${note.color || '#ffffff'}; 
+            style="--note-bg: ${note.color || '#ffffff'}; 
                     --pin-bg: ${note.pinColor || '#e1f5fe'}; 
                     --pin-border: ${note.pinColor || '#81d4fa'};
                     --text-color: ${note.textColor || '#5a6c7d'};">
@@ -151,7 +151,7 @@ function showTagSuggestions() {
         ? suggestions.map(tag => {
             const highlighted = highlightTag(tag, currentTag);
             return `<div class="tag-suggestion-item" onclick="addTagSuggestion('${escapeAttr(tag)}')">${highlighted}</div>`;
-          }).join('')
+            }).join('')
         : '<div class="no-suggestions">Нет подходящих тегов</div>';
 
     suggestionsBox.innerHTML = items;
@@ -454,13 +454,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (popaZ && popaAudio) {
         popaZ.addEventListener('click', () => {
-          
             if (popaAudio.paused) {
                 popaAudio.play().catch(error => {
                     console.log('Ошибка воспроизведения (проверь файл anthem.mp3):', error);
                 });
             } else {
-               
                 popaAudio.pause();
                 popaAudio.currentTime = 0;
             }
@@ -503,6 +501,8 @@ function openSecretModal() {
         loginScreen.style.display = 'block';
         document.getElementById('secret-password-input').value = '';
         document.getElementById('secret-password-input').focus();
+        if (errorText) errorText.style.display = 'none';
+        
         updateAttemptsUI();
     } else {
         setupScreen.style.display = 'block';
@@ -560,12 +560,15 @@ function checkSecretPassword() {
 }
 
 function updateAttemptsUI() {
-    if (errorText) {
+    const errorText = document.getElementById('secret-error');
+    if (!errorText) return;
+    if (failedAttempts > 0) {
         errorText.style.display = 'block';
-        errorText.textContent = `Неверный пароль! Осталось попыток: ${3 - failedAttempts}`;
+        errorText.textContent = `Неверный пароль! Осталось попыток: ${4 - failedAttempts}`;
+    } else {
+        errorText.style.display = 'none';
     }
 }
-
 // Открыть форму
 function openSecretNoteForm() {
     const form = document.getElementById('secret-note-form');
@@ -628,15 +631,6 @@ function renderSecretNotes() {
         return;
     }
 
-function renderSecretNotes() {
-    const list = document.getElementById('secret-notes-list');
-    if (!list) return;
-    
-    if (secretNotes.length === 0) {
-        list.innerHTML = '<p style="color:#888; text-align:center; padding: 20px;">Архив пуст.</p>';
-        return;
-    }
-
     let html = '';
     secretNotes.forEach(note => {
         html += `
@@ -644,12 +638,12 @@ function renderSecretNotes() {
             <!-- Кнопка удаления -->
             <button onclick="deleteSecretNote(${note.id})" 
                 style="position:absolute; top: 10px; right: 10px; 
-                       background: #ffebee; border: none; 
-                       border-radius: 6px; padding: 6px 10px; 
-                       cursor: pointer; color: #d32f2f;
-                       font-size: 18px; line-height: 1;
-                       transition: all 0.2s;
-                       z-index: 10;">
+                background: #ffebee; border: none; 
+                border-radius: 6px; padding: 6px 10px; 
+                cursor: pointer; color: #d32f2f;
+                font-size: 18px; line-height: 1;
+                transition: all 0.2s;
+                z-index: 10;">
                 🗑️
             </button>
             
@@ -675,12 +669,12 @@ function renderSecretNotes() {
         <div style="background:#fff; padding:12px; margin-bottom:10px; border-radius:8px; border-left: 4px solid #d32f2f; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative;">
             <div style="font-weight:bold; margin-bottom:5px;">${escapeHtml(note.title)}</div>
             <div style="color:#666; font-size:14px; white-space:pre-wrap;">${escapeHtml(note.content)}</div>
-            <button onclick="deleteSecretNote(${note.id})" style="position:absolute; top: 5px; right: 5px; background: #ffebee; border: none; border-radius: 4px; padding: 2px 8px; cursor: pointer; color: #d32f2f;">️🗑️</button>
+            <button onclick="deleteSecretNote(${note.id})" style="position:absolute; top: 5px; right: 5px; background: #ffebee; border: none; border-radius: 4px; padding: 2px 8px; cursor: pointer; color: #d32f2f;">️</button>
         </div>
         `;
     });
     list.innerHTML = html;
-}
+
 
 // Обработка Enter
 if (document.getElementById('secret-password-input')) {
